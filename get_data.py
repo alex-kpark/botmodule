@@ -103,7 +103,7 @@ def bot_generator(bot_dir_path, file_list):
     
     for csv in file_list: #files : 폴더 리스트
         try:
-            managed_file = flatten_to_numpy(bot_dir_path ,csv) #np들이 들어있는 List return
+            managed_file = flatten_to_numpy(bot_dir_path, csv) #np들이 들어있는 List return
             bot_list.append(managed_file)
         except Exception as e:
             print("[Error] Failed to Load")

@@ -21,25 +21,27 @@ bot_file_list = os.listdir(bot_dir_path)
 user_dir_path = 'D:/AION_DATA/Featured_user_Dataset/'
 user_file_list = os.listdir(user_dir_path)
 
+#hidden_dim : 80이 SOTA
+
 #하이퍼파라미터
 seq_length = 48 #뉴런의 개수
-data_dim = 11 #Feature의 개수 (input vector의 차원) ##### Feature 수 바꾸면 바꿔줘야함
+data_dim = 11 #Feature의 개수 (input vector의 차원)
 output_dim = 1
 n_class = 2 #Binary Classification
-hidden_dim = 160 #hidden layer의 개수
-iterations = 1000
+hidden_dim = 80 #hidden layer의 개수
+#iterations = 1000
 learning_rate = 0.01
 total_epochs = 1000
-batch_size = 10000 #Batch 없이 하는게 효율적이지만, GPU 쓸 때 메모리 터짐
+batch_size = 5000 #Batch 없이 하는게 효율적이지만, GPU 쓸 때 메모리 터짐
 
 
 '''
 데이터 불러오기
 '''
-bots = get_data.bot_generator(bot_dir_path, bot_file_list) #(10703, 48, 18)
-users = get_data.user_generator(user_dir_path, user_file_list) #(14481, 48, 18)
+bots = get_data.bot_generator(bot_dir_path, bot_file_list) 
+users = get_data.user_generator(user_dir_path, user_file_list)
 
-#Extract Necessary Features
+#Extract Necessary Features : 필요없는 피쳐 삭제
 def feature_exclude(arr):
     temp = []
     for i in arr:
@@ -49,29 +51,31 @@ def feature_exclude(arr):
     result = np.asarray(temp)
     return result
 
-#Label Creation
+#Label Creation : 정답지 만드는 함수
 def label_creation(label):
     
     temp = []
     if label == 1: #bot
         for i in range(len(bots)):
-            #temp.append([0,1])
-            temp.append(1)
+            temp.append([0,1])
+            #temp.append(1)
         result = np.asarray(temp)
-        result = np.expand_dims(result, axis=1)
+        #result = np.expand_dims(result, axis=1)
         print(result.shape)
         return result
     
     else: #user
         for j in range(len(users)):
-            #temp.append([1,0])
-            temp.append(0)
+            temp.append([1,0])
+            #temp.append(0)
         result = np.asarray(temp)
-        result = np.expand_dims(result, axis=1)
+        #result = np.expand_dims(result, axis=1)
         print(result.shape)
         return result      
 
 
+
+### 통계값 추가?
 #Data X
 bots = feature_exclude(bots) #10703,48,11 
 users = feature_exclude(users) #14481,48,11
@@ -98,8 +102,8 @@ print(test_x.shape) #(5038, 48, 11)
 print(test_label.shape) #(5038, 2)
 
 #학습 및 Test 시작
-model_regression.lstm_regression(train_x, train_label, test_x, test_label, seq_length, data_dim, output_dim,
-            hidden_dim, batch_size, n_class, learning_rate, total_epochs, iterations)
+model.lstm(train_x, train_label, test_x, test_label, seq_length, data_dim,
+            hidden_dim, batch_size, n_class, learning_rate, total_epochs)
 
 '''
 교차검증 구성
@@ -110,5 +114,4 @@ KF = KFold(n_splits=10, random_state=None, shuffle=False)
 train_bot, test_bot = train_test_split(bots, test_size=0.1, shuffle=False)
 train_user, test_user = train_test_split(users, test_size=0.1, shuffle=False)
 
-모델
 '''
