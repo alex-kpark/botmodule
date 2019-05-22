@@ -10,24 +10,24 @@ import os
 
 #feature
 feature_list = [
-    'total_cash',
-    'cash_in_account',
-    'cash_in_bank',
-    'cash_in_mail',
-    'cash_in_vendor',
-    'evaluated_asset_value',
-    'item_number',
-    'total_agency_default_price',
-    'total_mail_default_price',
-    'asset_value_in_bank',
-    'asset_value_in_account_bank',
-    'account_ratio_cash', #### 터짐
-    'bank_ratio_cash',
-    'mail_ratio_cash',
-    'vendor_ratio_cash',
-    'asset_per_item',
-    'asset_per_cash',
-    'gap_btw_cash_asset'
+    'total_cash', #0
+    'cash_in_account', #1
+    'cash_in_bank', #2
+    'cash_in_mail', #3
+    'cash_in_vendor', #4
+    'evaluated_asset_value', #5
+    'item_number', #6
+    'total_agency_default_price', #7
+    'total_mail_default_price', #8
+    'asset_value_in_bank', #9
+    'asset_value_in_account_bank', #10
+    'account_ratio_cash', #11 터짐
+    'bank_ratio_cash', #12
+    'mail_ratio_cash', #13
+    'vendor_ratio_cash', #14
+    'asset_per_item', #15
+    'asset_per_cash', #16
+    'gap_btw_cash_asset' #17
 ]
 
 
@@ -61,9 +61,20 @@ def flatten_to_numpy(dir_path, file):
 
 #[optional]필요없는 피쳐들 지워주기 위한 기능
 def dataset_cleaner(target_np):
-    axis = 1 #col
-    delete_idx = [11,12,13,14,15,16,17]
+    axis = 1 #col 
+    delete_idx = [3,2,7,10,11,12,13,14,15,16,17] #2,3일 때 0.76
     deleted_np = np.delete(target_np, delete_idx, axis)
+
+    
+    #Stat add modeul
+    mean = np.mean(deleted_np, axis=0)
+    std = np.std(deleted_np, axis=0)
+    median = np.median(deleted_np, axis=0)
+    
+    deleted_np = np.vstack((deleted_np, mean))
+    deleted_np = np.vstack((deleted_np, std))
+    deleted_np = np.vstack((deleted_np, median))
+    
     return deleted_np
 
 #후에 Testing 시 필요

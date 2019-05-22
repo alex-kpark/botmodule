@@ -14,33 +14,59 @@ def lstm(train_x, train_label, test_x, test_label, seq_length, data_dim, hidden_
 
     X = tf.placeholder(tf.float32, [None, seq_length, data_dim]) #배치크기 x 뉴런 수 x 입력차원(피쳐)
     Y = tf.placeholder(tf.float32, [None, n_class])
+    keep_prob = tf.placeholder(tf.float32)
+    #seq_length = tf.placeholder(tf.int32)
 
-    #W = tf.Variable(tf.random_normal([hidden_dim, n_class]))
-    #b = tf.Variable(tf.random_normal([n_class]))    
-    
-    W = tf.get_variable('W_output', dtype=tf.float32, initializer=tf.random_normal([hidden_dim, n_class], stddev=0.1))
-    b = tf.get_variable('b_output', dtype=tf.float32, initializer=tf.zeros([n_class]))
+    #X = tf.unstack(X, seq_length, 1)
+
+    def model(keep_prob):#, seq_length):
+        #W = tf.Variable(tf.random_normal([hidden_dim, n_class]))
+        #b = tf.Variable(tf.random_normal([n_class]))    
+        
+        W = tf.get_variable('W_output', dtype=tf.float32, initializer=tf.random_normal([hidden_dim, n_class], stddev=0.1))
+        b = tf.get_variable('b_output', dtype=tf.float32, initializer=tf.zeros([n_class]))
 
 
-    cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=hidden_dim,
-                                        state_is_tuple=True,
-                                        activation=tf.tanh) #Hidden Layer의 Activation
-
-    #static rnn?
-    outputs, _states = tf.nn.dynamic_rnn(cell,
+        cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=hidden_dim,
+        #cell = tf.contrib.rnn.LayerNormBasicLSTMCell(num_units=hidden_dim, #Batch NORM
+                                            state_is_tuple=True,
+                                            #forget_bias=1.0,
+                                            activation=tf.tanh)#tf.tanh) #Hidden Layer의 Activation
+        
+        #Dropout
+        cell = tf.contrib.rnn.DropoutWrapper(cell,
+                                            input_keep_prob=keep_prob, #keep_prob
+                                            output_keep_prob=keep_prob)
+        
+        #dynamic
+        outputs, _states = tf.nn.static_rnn(cell,
                                             X,
+                                            #sequence_length=seq_length,
                                             dtype=tf.float32)
 
-    outputs = tf.transpose(outputs, [1,0,2])
-    outputs = outputs[-1] #Many-to-One Model이므로 마지막 값만 사용
+        outputs = tf.transpose(outputs, [1,0,2])
+        outputs = outputs[-1] #Many-to-One Model이므로 마지막 값만 사용
 
-    #Prediction Value
-    softmax_y = tf.matmul(outputs, W) + b
+        #Prediction Value
+        softmax_y = tf.matmul(outputs, W) + b
+        
+        return softmax_y
+
+    softmax_y = model(keep_prob)
+    #softmax_y = tf.nn.relu(softmax_y)
+
+    
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=softmax_y,
+                                                                        labels=Y))
+    '''
+    #L2 Loss
+    tv = tf.trainable_variables()
+    reg_cost = tf.reduce_sum([tf.nn.l2_loss(v) for v in tv])
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=softmax_y,
-                                                                    labels=Y))
+                                                                    labels=Y)) + reg_cost
+    '''
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
-    
     
     #Evaluation Metrics
     is_correct = tf.equal(tf.argmax(softmax_y, 1), tf.argmax(Y, 1))
@@ -73,13 +99,18 @@ def lstm(train_x, train_label, test_x, test_label, seq_length, data_dim, hidden_
                 _, cost_val, train_accuracy = sess.run([optimizer, cost, accuracy],
                                         feed_dict={
                                             X: batch_xs,
-                                            Y: batch_ys
+                                            Y: batch_ys,
+                                            keep_prob : 0.8
                                         })
                 total_cost += cost_val
 
             #Visualized Check
             if epoch % 5 == 0:
-                test_accuracy = sess.run(accuracy, feed_dict={X: test_x, Y: test_label})
+                test_accuracy = sess.run(accuracy, feed_dict={
+                                                                X: test_x,
+                                                                Y: test_label,
+                                                                keep_prob : 1.0
+                                                            })
                 updates.append(epoch)
                 train_acc.append(train_accuracy)
                 test_acc.append(test_accuracy)

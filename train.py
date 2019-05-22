@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 
 import get_data
 import model
-import model_rmse
-import model_regression
+#import model_rmse
+#import model_regression
 
 #전처리한 데이터들 놓기
 bot_dir_path = 'D:/AION_DATA/Featured_bot_Dataset/' 
@@ -24,15 +24,18 @@ user_file_list = os.listdir(user_dir_path)
 #hidden_dim : 80이 SOTA
 
 #하이퍼파라미터
-seq_length = 48 #뉴런의 개수
-data_dim = 11 #Feature의 개수 (input vector의 차원)
-output_dim = 1
-n_class = 2 #Binary Classification
-hidden_dim = 80 #hidden layer의 개수
+
+#output_dim = 1
 #iterations = 1000
+
+seq_length = 51 #뉴런의 개수 + 통계값 수
+data_dim = 7 #피쳐 
+n_class = 2 #BinaryS Classification
+total_epochs = 10000
+
+hidden_dim = 30 #hidden layer의 개수 #80
 learning_rate = 0.01
-total_epochs = 1000
-batch_size = 5000 #Batch 없이 하는게 효율적이지만, GPU 쓸 때 메모리 터짐
+batch_size = 20000 #Batch 없이 하는게 효율적이지만, GPU 쓸 때 메모리 터짐 #현재 70
 
 
 '''
@@ -85,9 +88,8 @@ bots_label = label_creation(1)
 users_label = label_creation(0)
 
 #Train, Test Split
-bot_x_train, bot_x_test, bot_y_train, bot_y_test = train_test_split(bots, bots_label, test_size=0.05)
-user_x_train, user_x_test, user_y_train, user_y_test = train_test_split(users, users_label, test_size=0.05)
-
+bot_x_train, bot_x_test, bot_y_train, bot_y_test = train_test_split(bots, bots_label, test_size=0.01, shuffle=True)
+user_x_train, user_x_test, user_y_train, user_y_test = train_test_split(users, users_label, test_size=0.01, shuffle=True)
 train_x = np.concatenate((bot_x_train, user_x_train))
 train_label = np.concatenate((bot_y_train, user_y_train))
 test_x = np.concatenate((bot_x_test, user_x_test))
